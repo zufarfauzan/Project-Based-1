@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "ticker": "BBCA",
+    "name": "Bank Central Asia Tbk",
+    "sector": "finance",
+    "price": 9850,
+    "volume": 450000
+  },
+  {
+    "id": 2,
+    "ticker": "TLKM",
+    "name": "Telkom Indonesia Tbk",
+    "sector": "technology",
+    "price": 3150,
+    "volume": 280000
+  },
+  {
+    "id": 3,
+    "ticker": "ASII",
+    "name": "Astra International Tbk",
+    "sector": "industry",
+    "price": 5100,
+    "volume": 125000
+  },
+  {
+    "id": 4,
+    "ticker": "BBRI",
+    "name": "Bank Rakyat Indonesia Tbk",
+    "sector": "finance",
+    "price": 4900,
+    "volume": 620000
+  },
+  {
+    "id": 6,
+    "ticker": "SAHAM BARU",
+    "name": "Bank Central Asia Tbk",
+    "sector": "finance",
+    "price": 9999,
+    "lot": 99999
+  }
+]

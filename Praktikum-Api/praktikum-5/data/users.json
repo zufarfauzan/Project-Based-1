@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "role": "admin",
+    "salt": "b7bbb50e3704ffe25a4128351dec12d8",
+    "passwordHash": "e9bb29a9dcedace3c342f1af15312b9e0a118d08bbcc883d0646371486bcb468"
+  },
+  {
+    "id": 2,
+    "username": "editor",
+    "role": "editor",
+    "salt": "3ce39cbdf9b4c01566055ad5a5b2f9db",
+    "passwordHash": "a15e417f3206fbcd137ba3f6b349d0de77c7eb0daf1931683eec6c04a49e951a"
+  },
+  {
+    "id": 3,
+    "username": "asisten",
+    "role": "editor",
+    "salt": "93f8e48231edc1593d488e2e88d10d6a",
+    "passwordHash": "3a436e92903795db866f6d2210d40dc9ef771a66937baf62ccf23f524fa1032c"
+  },
+  {
+    "id": 4,
+    "username": "F5512520074",
+    "role": "editor",
+    "salt": "42ef3b594f4e5162d5e8d9099ccbe546",
+    "passwordHash": "250d24a4dda405328afad0b8df0472f2975d061571a931f2f9f485ba3b093254"
+  }
+]
