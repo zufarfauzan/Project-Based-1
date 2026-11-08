@@ -3,20 +3,15 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config();
 
-// Secret key rahasia yang hanya diketahui oleh server (simpan di Environment Variable)
 const SECRET_KEY = process.env.SECRET_KEY || 'ambatron48';
 
 function createToken(user) {
     const payload = {
-        id: user._id ? user._id.toString() : user.id,
-        username: user.username
+        id: user && (user._id ? user._id.toString() : user.id),
+        username: user && (user.username || user)
     };
 
-    // Token kedaluwarsa dalam 24 jam
-    const options = { expiresIn: '24h' };
-
-    // Membuat token
-    const token = jwt.sign(payload, SECRET_KEY, options);
+    const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '24h' });
     return token;
 }
 

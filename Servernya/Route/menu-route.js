@@ -1,7 +1,10 @@
 const { kirimError } = require('../Utils/menu.js');
 const menuController = require('../Controller/menu-controller.js');
+const { verifyToken } = require('../Middleware/middleware.js');
 
 async function menuRouter(req, res, segmen) {
+    if (!await verifyToken(req, res)) return;
+
     // Jalur endpoint: segmen[1] mengambil segmen setelah '/menu'
     const endpoint = segmen[1];
 

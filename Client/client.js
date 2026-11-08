@@ -1,6 +1,5 @@
 const readline = require('readline');
 
-// Konfigurasi interface terminal
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
@@ -10,10 +9,9 @@ const BASE_URL = 'http://localhost:3000';
 let username = '';
 let tokenDiterima = null;
 
-// Fungsi helper untuk input terminal berbasis Promise
+
 const question = (query) => new Promise((resolve) => rl.question(query, resolve));
 
-// Fungsi helper request API dengan otomatis menyertakan Bearer Token jika sudah login
 async function requestAPI(endpoint, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
@@ -27,11 +25,22 @@ async function requestAPI(endpoint, options = {}) {
   });
 
   const contentType = response.headers.get('content-type');
+  let data = null;
   if (contentType && contentType.includes('application/json')) {
-    return await response.json();
+    data = await response.json();
+  } else {
+    data = { status: response.status, ok: response.ok };
   }
 
-  return { status: response.status, ok: response.ok };
+  if (response.status === 401) {
+    console.log(`\n[AUTENTIKASI GAGAL (401)] ${data.error || 'Token tidak valid atau kedaluwarsa. Harap login kembali.'}`);
+    tokenDiterima = null;
+    username = '';
+    await showAuthMenu();
+    return null;
+  }
+
+  return data;
 }
 
 // Menu Awal (Autentikasi: Register / Login)
@@ -101,11 +110,12 @@ async function handleLogin() {
     const data = await response.json();
 
     if (response.ok) {
-      tokenDiterima = data.token; // Simpan token untuk autentikasi selanjutnya
+      tokenDiterima = data.token; 
       username = data.username || inputUsername;
       console.log(data.message || 'Login berhasil!');
       await showMainMenu();
-    } else {
+    } 
+    else {
       console.log('Login Gagal:', data.error || 'Username atau password salah.');
       await showAuthMenu();
     }
@@ -170,6 +180,7 @@ async function searchFood() {
     const data = await requestAPI(
       `/menu/search?q=${encodeURIComponent(keyword.trim())}`
     );
+    if (!data) return; // 401 Unauthorized sudah diarahkan kembali ke auth menu
 
     console.log("\nHasil pencarian:");
 
@@ -207,6 +218,7 @@ async function searchFood() {
             carbs: Math.max(0.1, Math.round(((Number(selectedFood.carbs) || 0) * multiplier) * 10) / 10)
           })
         });
+        if (!addRes) return;
         console.log(addRes.message || "Makanan berhasil dicatat ke riwayat!");
       }
     }
@@ -246,6 +258,7 @@ async function AddFood() {
         carbs
       })
     });
+    if (!data) return;
 
     console.log(data.message || data.error || "Makanan berhasil dicatat.");
   } catch (error) {
@@ -273,6 +286,7 @@ async function showFoodHistory() {
 
   try {
     const data = await requestAPI(`/menu/history${query}`);
+    if (!data) return;
 
     if (!data.data || data.data.length === 0) {
       console.log("\nBelum ada riwayat makanan untuk periode tersebut.");
@@ -313,6 +327,7 @@ async function showNutritionSummary() {
 
   try {
     const data = await requestAPI(`/menu/summary${query}`);
+    if (!data) return;
     const summary = data.data || data;
 
     console.log(`\nRingkasan untuk tanggal: ${summary.date || (trimmed || 'Hari ini')}`);
@@ -348,6 +363,7 @@ async function deleteFoodHistory() {
       const data = await requestAPI(`/menu/history/${encodeURIComponent(foodId.trim())}`, {
         method: "DELETE"
       });
+      if (!data) return;
       console.log(data.message || data.error);
     } catch (error) {
       console.log("Gagal menghapus riwayat makanan:", error.message);
@@ -359,6 +375,7 @@ async function deleteFoodHistory() {
         const data = await requestAPI("/menu/history", {
           method: "DELETE"
         });
+        if (!data) return;
         console.log(data.message || data.error);
       } catch (error) {
         console.log("Gagal menghapus riwayat makanan:", error.message);

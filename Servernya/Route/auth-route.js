@@ -1,10 +1,9 @@
-// Route/auth-route.js
+
 const authController = require('../Controller/auth-controller.js');
 const { kirimError } = require('../Utils/menu.js');
 
 async function authRouter(req, res, segmen) {
-    // Jalur endpoint: /auth/register atau /auth/login
-    const endpoint = segmen[1]; // Mengambil segmen setelah '/auth'
+    const endpoint = segmen[1]; 
 
     if (endpoint === 'register') {
         if (req.method === 'POST') {

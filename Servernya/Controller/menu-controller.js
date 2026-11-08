@@ -1,11 +1,12 @@
 const foodService = require("../Service/menu-service.js");
 const { bacaBody, kirimJSON, kirimError } = require('../Utils/menu.js');
-const { verifyToken, extractUser } = require('../Middleware/middleware.js');
+const { verifyToken } = require('../Middleware/middleware.js');
 const { InputanAddFood } = require('../Validation/validation.js');
 
 // Controller untuk Menu 1: Pencarian Makanan
 async function searchFoods(req, res) {
   try {
+
     const url = new URL(
       req.url,
       `http://${req.headers.host || "localhost"}`
@@ -28,25 +29,26 @@ async function searchFoods(req, res) {
       count: foods.length,
       data: foods
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("searchFoods error:", error);
-    return kirimError(res, error.statusCode || 502, error.message || "Gagal mencari makanan");
+    return kirimError(res, error.statusCode || 500, error.message || "Gagal mencari makanan");
   }
 }
 
-// Controller untuk Menu 2: Tambah Makanan Manual
 async function FoodAdd(req, res) {
   try {
+
     const input = await bacaBody(req);
     InputanAddFood(input);
 
-    const user = extractUser(req);
-    const result = await foodService.AddFood(input, user);
+    const result = await foodService.AddFood(input, req.user);
     return kirimJSON(res, 201, { 
       message: 'Makanan berhasil ditambahkan',
       data: result
     });
-  } catch (err) {
+  } 
+  catch (err) {
     return kirimError(res, err.statusCode || 500, err.message);
   }
 }
@@ -54,7 +56,7 @@ async function FoodAdd(req, res) {
 // Controller untuk Menu 3: Tampilkan History Makanan
 async function getFoodHistory(req, res) {
   try {
-    if (!verifyToken(req, res)) return;
+    if (!await verifyToken(req, res)) return;
 
     const url = new URL(
       req.url,
@@ -71,16 +73,15 @@ async function getFoodHistory(req, res) {
       count: foods.length,
       data: foods
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("getFoodHistory error:", error);
     return kirimError(res, error.statusCode || 500, error.message || "Gagal mengambil riwayat makanan");
   }
 }
 
-// Controller untuk Menu 4: Tampilkan Total Nutrisi Harian
 async function getNutritionSummary(req, res) {
   try {
-    if (!verifyToken(req, res)) return;
 
     const url = new URL(
       req.url,
@@ -95,7 +96,8 @@ async function getNutritionSummary(req, res) {
       message: "Ringkasan nutrisi berhasil diambil",
       data: summary
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("getNutritionSummary error:", error);
     return kirimError(res, error.statusCode || 500, error.message || "Gagal mengambil ringkasan nutrisi");
   }
@@ -104,7 +106,6 @@ async function getNutritionSummary(req, res) {
 // Controller untuk Menu 5: Hapus History Makanan
 async function deleteFoodHistory(req, res, idFromParam) {
   try {
-    if (!verifyToken(req, res)) return;
 
     const url = new URL(
       req.url,
@@ -119,7 +120,8 @@ async function deleteFoodHistory(req, res, idFromParam) {
       message: result.message || "Riwayat makanan berhasil dihapus",
       deletedCount: result.deletedCount
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("deleteFoodHistory error:", error);
     return kirimError(res, error.statusCode || 500, error.message || "Gagal menghapus riwayat makanan");
   }

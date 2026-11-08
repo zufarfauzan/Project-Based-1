@@ -3,11 +3,10 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config();
 
-// Connection String MongoDB Atlas
 const usernameDB = process.env.usernameDB;
 const passwordDB = process.env.passwordDB;
 const namaDB = process.env.namaDB;
-const uri = `mongodb+srv://${usernameDB}:${passwordDB}@cluster0.oznru4g.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${usernameDB}:${passwordDB}@cluster0.oznru4g.mongodb.net/${namaDB}?retryWrites=true&w=majority&appName=Cluster0`;
 
 let dbConnection;
 

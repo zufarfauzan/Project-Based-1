@@ -2,13 +2,19 @@ const { getDb } = require("../Config/db.js");
 const { buatError } = require('../Utils/menu.js');
 const { ObjectId } = require('mongodb');
 
-function getFoodsCollection() {
+// Koleksi untuk katalog makanan (hasil pencarian & cache dari Open Food Facts)
+function getCatalogCollection() {
   return getDb().collection('Foods');
 }
 
-// MENU 1: Pencarian makanan via API eksternal Open Food Facts dan koleksi Foods
+// Koleksi khusus untuk log/riwayat makanan yang dikonsumsi oleh pengguna
+function getLogsCollection() {
+  return getDb().collection('Food_Logs');
+}
+
+// MENU 1: Pencarian makanan via API eksternal Open Food Facts dan koleksi katalog Foods
 async function searchFoods(keyword) {
-  const collection = getFoodsCollection();
+  const collection = getCatalogCollection();
   const searchResults = [];
 
   // 1. Cari via Open Food Facts API
@@ -80,9 +86,11 @@ async function searchFoods(keyword) {
   return searchResults;
 }
 
-// MENU 2: Tambah Makanan Yang telah Dimakan (Manual Input)
+// MENU 2: Tambah Makanan Yang telah Dimakan (Manual Input ke Food_Logs)
 async function AddFood(input, user) {
-  const collection = getFoodsCollection();
+
+  const logsCollection = getLogsCollection();
+  const userId = user.id || user._id.toString();
 
   const newFood = {
     name: input.name.trim(),
@@ -91,27 +99,27 @@ async function AddFood(input, user) {
     protein: Number(input.protein) || 0,
     fat: Number(input.fat) || 0,
     carbs: Number(input.carbs) || 0,
-    userId: user ? (user.id || user._id?.toString()) : (input.userId || null),
-    username: user ? user.username : (input.username || null),
+    userId: userId,
+    username: user.username,
     createdAt: new Date()
   };
 
-  const result = await collection.insertOne(newFood);
+  const result = await logsCollection.insertOne(newFood);
   return { _id: result.insertedId, ...newFood };
 }
 
-// MENU 3: Tampilkan History Makanan Pada Hari Tertentu
+// MENU 3: Tampilkan History Makanan Pada Hari Tertentu (Hanya milik user login)
 async function getFoodHistory(user, options = {}) {
-  const collection = getFoodsCollection();
-  const filter = {};
 
-  // Filter berdasarkan pengguna jika ada info user
-  if (user && (user.id || user.username)) {
-    filter.$or = [
-      { userId: user.id },
+  const logsCollection = getLogsCollection();
+  const userId = user.id || user._id.toString();
+
+  const filter = {
+    $or: [
+      { userId: userId },
       { username: user.username }
-    ];
-  }
+    ]
+  };
 
   // Filter tanggal spesifik (format YYYY-MM-DD)
   if (!options.all && options.date) {
@@ -126,25 +134,7 @@ async function getFoodHistory(user, options = {}) {
     filter.createdAt = { $gte: startOfDay, $lte: endOfDay };
   }
 
-  let foods = await collection.find(filter).sort({ createdAt: -1 }).toArray();
-
-  // Dukungan data riwayat yang belum memiliki userId (backward compatibility)
-  if (foods.length === 0 && user && filter.$or) {
-    const legacyFilter = {
-      $or: [
-        { userId: null },
-        { userId: { $exists: false } }
-      ]
-    };
-    if (filter.createdAt) {
-      legacyFilter.createdAt = filter.createdAt;
-    }
-    const legacyFoods = await collection.find(legacyFilter).sort({ createdAt: -1 }).toArray();
-    if (legacyFoods.length > 0) {
-      foods = legacyFoods;
-    }
-  }
-
+  const foods = await logsCollection.find(filter).sort({ createdAt: -1 }).toArray();
   return foods;
 }
 
@@ -178,24 +168,28 @@ async function getNutritionSummary(user, dateStr) {
 
 // MENU 5: Hapus History Makanan (berdasarkan ID atau semua riwayat)
 async function deleteFoodHistory(user, foodId) {
-  const collection = getFoodsCollection();
+
+  const logsCollection = getLogsCollection();
+  const userId = user.id || user._id.toString();
+
+  const userOwnership = {
+    $or: [
+      { userId: userId },
+      { username: user.username }
+    ]
+  };
 
   if (foodId) {
     if (!ObjectId.isValid(foodId)) {
       throw buatError(400, 'Format ID makanan tidak valid');
     }
 
-    const filter = { _id: new ObjectId(foodId) };
-    if (user && (user.id || user.username)) {
-      filter.$or = [
-        { userId: user.id },
-        { username: user.username },
-        { userId: null },
-        { userId: { $exists: false } }
-      ];
-    }
+    const filter = {
+      _id: new ObjectId(foodId),
+      ...userOwnership
+    };
 
-    const result = await collection.deleteOne(filter);
+    const result = await logsCollection.deleteOne(filter);
     if (result.deletedCount === 0) {
       throw buatError(404, 'Data makanan tidak ditemukan atau tidak memiliki hak akses');
     }
@@ -205,18 +199,8 @@ async function deleteFoodHistory(user, foodId) {
       message: 'Riwayat makanan berhasil dihapus'
     };
   } else {
-    // Hapus semua riwayat makanan untuk user
-    let filter = {};
-    if (user && (user.id || user.username)) {
-      filter = {
-        $or: [
-          { userId: user.id },
-          { username: user.username }
-        ]
-      };
-    }
-
-    const result = await collection.deleteMany(filter);
+    // Hapus semua riwayat makanan untuk user yang sedang login
+    const result = await logsCollection.deleteMany(userOwnership);
     return {
       deletedCount: result.deletedCount,
       message: `${result.deletedCount} riwayat makanan berhasil dihapus`
